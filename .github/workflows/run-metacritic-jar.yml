@@ -1,48 +1,50 @@
 name: Metacritic JAR Runner
 
 on:
-  workflow_dispatch:
+  workflow_run:
+    workflows: ["Nintendo Script Runner"]
+    types: [completed]
 
 jobs:
   run-jar:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout this repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Download converted_report3.xlsx artifact
+      - name: Download XLSX artifact from previous workflow
         uses: actions/download-artifact@v4
         with:
           name: converted_report
+          path: .
+
+      - name: Download JSON artifact from previous workflow
+        uses: actions/download-artifact@v4
+        with:
+          name: matched_nintendo_games_json
           path: .
 
       - name: Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '17'  # Change to 21 or 11 if needed
 
-      - name: Create gcp_key.json from secret
-        run: echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > gcp_key.json
+      - name: Create GCP credentials file
+        run: echo "${{ secrets.GCP_JSON_KEY }}" > gcp_key.json
 
-      - name: Clone maysaleba.github.io repo
-        run: |
-          git clone https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/maysaleba/maysaleba.github.io.git site
-
-      - name: Run metacritic_enrich_switch.jar
+      - name: Run Metacritic enrichment JAR
         run: java -jar metacritic_enrich_switch.jar
 
-      - name: Move output files to GitHub Pages repo
+      - name: Commit and push updated csvjson files
         run: |
-          mv csvjson.json site/src/csvjson.json
-          mv csvjson.csv site/src/csvjson.csv
-
-      - name: Commit and push updated JSON + CSV
-        run: |
-          cd site
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/csvjson.json src/csvjson.csv
-          git commit -m "🤖 Auto-update csvjson.json and csvjson.csv from JAR output"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git clone https://x-access-token:${{ secrets.MY_TOKEN }}@github.com/maysaleba/maysaleba.github.io.git site-repo
+          cp csvjson.json site-repo/src/csvjson.json
+          cp csvjson.csv site-repo/src/csvjson.csv
+          cd site-repo
+          git add src/csvjson.*
+          git commit -m "🔁 Auto-update CSVJSON from JAR"
           git push
