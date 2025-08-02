@@ -1,0 +1,125 @@
+{
+  "_from": "nintendo-switch-eshop@latest",
+  "_id": "nintendo-switch-eshop@6.0.2",
+  "_inBundle": false,
+  "_integrity": "sha512-kT/NrcnjpHTm/LHkX6CywDERgsmZNPx/ClCeFIv6l6S4WUMTW8oTDoZMfXmIGyXOWGChQ6WSlTqvXRTvUSdWoA==",
+  "_location": "/nintendo-switch-eshop",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "nintendo-switch-eshop@latest",
+    "name": "nintendo-switch-eshop",
+    "escapedName": "nintendo-switch-eshop",
+    "rawSpec": "latest",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#DEV:/",
+    "#USER"
+  ],
+  "_resolved": "https://registry.npmjs.org/nintendo-switch-eshop/-/nintendo-switch-eshop-6.0.2.tgz",
+  "_shasum": "3305797a827bf20634f7de89ff2c00167ec4bf1f",
+  "_spec": "nintendo-switch-eshop@latest",
+  "_where": "C:\\Users\\andre\\Desktop\\bggen",
+  "author": {
+    "name": "lmmfranco"
+  },
+  "bugs": {
+    "url": "https://github.com/lmmfranco/nintendo-switch-eshop/issues"
+  },
+  "bundleDependencies": false,
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "dependencies": {
+    "@sapphire/fetch": "^2.0.2",
+    "@types/country-data": "^0.0.2",
+    "country-data": "^0.0.31",
+    "fast-xml-parser": "^3.21.0"
+  },
+  "deprecated": false,
+  "description": "Unofficial API lib for Nintendo Switch eShop game listing and pricing information.",
+  "devDependencies": {
+    "@commitlint/cli": "^13.2.1",
+    "@commitlint/config-conventional": "^13.2.0",
+    "@sapphire/eslint-config": "^4.0.1",
+    "@sapphire/prettier-config": "^1.2.3",
+    "@sapphire/ts-config": "^3.1.2",
+    "@types/jest": "^27.0.2",
+    "@types/node": "^16.11.5",
+    "@typescript-eslint/eslint-plugin": "^5.2.0",
+    "@typescript-eslint/parser": "^5.2.0",
+    "common-tags": "^1.8.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^8.1.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "gen-esm-wrapper": "^1.1.3",
+    "husky": "^7.0.4",
+    "jest": "^27.3.1",
+    "jest-circus": "^27.3.1",
+    "lint-staged": "^11.2.4",
+    "prettier": "^2.4.1",
+    "pretty-quick": "^3.1.1",
+    "replace": "^1.2.1",
+    "standard-version": "^9.3.2",
+    "ts-jest": "^27.0.7",
+    "ts-node": "^10.4.0",
+    "typedoc": "^0.22.7",
+    "typescript": "^4.4.4"
+  },
+  "engines": {
+    "node": ">=10",
+    "npm": ">=6"
+  },
+  "exports": {
+    "import": "./dist/index.mjs",
+    "require": "./dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "!dist/*.tsbuildinfo"
+  ],
+  "homepage": "https://github.com/lmmfranco/nintendo-switch-eshop#readme",
+  "keywords": [
+    "eshop",
+    "switch",
+    "nintendo",
+    "crawler",
+    "lib",
+    "typescript"
+  ],
+  "license": "Apache-2.0",
+  "lint-staged": {
+    "*.{mjs,js,ts}": "eslint --fix --ext mjs,js,ts"
+  },
+  "main": "dist/index.js",
+  "name": "nintendo-switch-eshop",
+  "packageManager": "yarn@3.0.2",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lmmfranco/nintendo-switch-eshop.git"
+  },
+  "scripts": {
+    "build": "tsc -b src && gen-esm-wrapper dist/index.js dist/index.mjs",
+    "clean": "tsc -b src --clean",
+    "docs": "typedoc",
+    "lint": "eslint src __tests__ --ext js,ts --fix",
+    "prepublishOnly": "yarn build",
+    "sversion": "standard-version",
+    "test": "jest",
+    "update": "yarn upgrade-interactive",
+    "watch": "tsc -b src -w"
+  },
+  "types": "dist/index.d.ts",
+  "version": "6.0.2"
+}
