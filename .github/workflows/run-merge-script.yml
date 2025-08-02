@@ -38,3 +38,11 @@ jobs:
         with:
           name: converted_report
           path: converted_report3.xlsx
+
+      - name: Commit updated XLSX to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add converted_report3.xlsx
+          git commit -m "🔄 Auto-update converted_report3.xlsx"
+          git push
