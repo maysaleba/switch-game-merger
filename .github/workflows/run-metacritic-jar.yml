@@ -34,6 +34,12 @@ jobs:
       - name: Create GCP credentials file
         run: echo "${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}" | base64 -d > gcp_key.json
 
+      - name: Check JSON file content
+        run: |
+          echo "===== gcp_key.json start ====="
+          cat gcp_key.json
+          echo "===== gcp_key.json end ====="
+
       - name: Run Metacritic enrichment JAR
         run: java -jar metacritic_enrich_switch.jar
 
