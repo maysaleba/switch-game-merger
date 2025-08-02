@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v3
+
       - name: Download csvjsontr.json and csvjsontr.csv from maysaleba.github.io
         run: |
           mkdir -p site/src
@@ -36,9 +39,6 @@ jobs:
           echo "===== gcp_key.json start ====="
           cat gcp_key.json
           echo "===== gcp_key.json end ====="
-
-      - name: List repo files
-        run: ls -al
 
       - name: Run Metacritic enrichment JAR
         run: java -jar metacritic-enrich-playstation-1.0.0.jar
