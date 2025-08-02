@@ -38,9 +38,9 @@ jobs:
           echo "===== gcp_key.json end ====="
 
       - name: Run Metacritic enrichment JAR
-        run: java -jar metacritic-enrich-switch-1.0.0.jar
+        run: java -jar metacritic-enrich-playstation-1.0.0.jar
 
-      - name: Commit and push updated csvjson files using sparse checkout
+      - name: Commit and push updated csvjsontr files using sparse checkout
         run: |
           mkdir gh-pages
           cd gh-pages
@@ -49,8 +49,8 @@ jobs:
           git remote add origin https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/maysaleba/maysaleba.github.io.git
           git config core.sparseCheckout true
 
-          echo "src/csvjson.json" >> .git/info/sparse-checkout
-          echo "src/csvjson.csv"  >> .git/info/sparse-checkout
+          echo "src/csvjsontr.json" >> .git/info/sparse-checkout
+          echo "src/csvjsontr.csv"  >> .git/info/sparse-checkout
 
           git fetch origin main
           git checkout main
@@ -58,9 +58,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          cp ../site/src/csvjson.* src/
+          cp ../site/src/csvjsontr.* src/
 
-          git add src/csvjson.*
+          git add src/csvjsontr.*
           git commit -m "🔁 Auto-update CSVJSON from JAR" || echo "No changes to commit"
           git pull --rebase origin main
           git push origin main
