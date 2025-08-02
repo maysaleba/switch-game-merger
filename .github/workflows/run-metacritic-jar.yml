@@ -11,8 +11,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout main repo (includes converted_report3.xlsx)
+      - name: Checkout repo (contains JAR + converted_report3.xlsx)
         uses: actions/checkout@v3
+
+      - name: Download csvjson.json and csvjson.csv from maysaleba.github.io
+        run: |
+          mkdir -p site/src
+          curl -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
+               -o site/src/csvjson.json \
+               https://raw.githubusercontent.com/maysaleba/maysaleba.github.io/main/src/csvjson.json
+
+          curl -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
+               -o site/src/csvjson.csv \
+               https://raw.githubusercontent.com/maysaleba/maysaleba.github.io/main/src/csvjson.csv
 
       - name: Setup Java
         uses: actions/setup-java@v3
@@ -21,21 +32,20 @@ jobs:
           java-version: '17'
 
       - name: Create GCP credentials file
-        run: echo "${{ secrets.GCP_JSON_KEY }}" > gcp_key.json
-
-      - name: Clone maysaleba.github.io into ./site
-        run: git clone https://x-access-token:${{ secrets.MY_TOKEN }}@github.com/maysaleba/maysaleba.github.io.git site
+        run: echo "${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}" > gcp_key.json
 
       - name: Run Metacritic enrichment JAR
         run: java -jar metacritic_enrich_switch.jar
 
       - name: Commit and push updated csvjson files
         run: |
+          cd site
+          git init
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          cp csvjson.json site/src/csvjson.json
-          cp csvjson.csv site/src/csvjson.csv
-          cd site
+          git remote add origin https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/maysaleba/maysaleba.github.io.git
+          git fetch origin main
+          git checkout -b main
           git add src/csvjson.*
           git commit -m "🔁 Auto-update CSVJSON from JAR"
-          git push
+          git push origin main
