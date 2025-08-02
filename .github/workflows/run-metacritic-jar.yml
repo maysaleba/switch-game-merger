@@ -30,10 +30,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git clone https://x-access-token:${{ secrets.MY_TOKEN }}@github.com/maysaleba/maysaleba.github.io.git site-repo
-          cp csvjson.json site-repo/src/csvjson.json
-          cp csvjson.csv site-repo/src/csvjson.csv
-          cd site-repo
+          git clone https://x-access-token:${{ secrets.MY_TOKEN }}@github.com/maysaleba/maysaleba.github.io.git site
+          cp csvjson.json site/src/csvjson.json
+          cp csvjson.csv site/src/csvjson.csv
+          cd site
           git add src/csvjson.*
           git commit -m "🔁 Auto-update CSVJSON from JAR"
           git push
