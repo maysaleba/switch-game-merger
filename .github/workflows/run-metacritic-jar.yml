@@ -1,9 +1,10 @@
 name: Metacritic JAR Runner
 
 on:
+  workflow_dispatch:       # 🔹 allow manual runs from GitHub UI
   workflow_run:
     workflows: ["Nintendo Script Runner"]
-    types: [completed]
+    types: [completed]     # 🔹 also allow automatic trigger after the first script
 
 jobs:
   run-jar:
