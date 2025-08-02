@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo (includes converted_report3.xlsx)
+      - name: Checkout main repo (includes converted_report3.xlsx)
         uses: actions/checkout@v3
 
       - name: Setup Java
@@ -23,6 +23,9 @@ jobs:
       - name: Create GCP credentials file
         run: echo "${{ secrets.GCP_JSON_KEY }}" > gcp_key.json
 
+      - name: Clone maysaleba.github.io into ./site
+        run: git clone https://x-access-token:${{ secrets.MY_TOKEN }}@github.com/maysaleba/maysaleba.github.io.git site
+
       - name: Run Metacritic enrichment JAR
         run: java -jar metacritic_enrich_switch.jar
 
@@ -30,7 +33,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git clone https://x-access-token:${{ secrets.MY_TOKEN }}@github.com/maysaleba/maysaleba.github.io.git site
           cp csvjson.json site/src/csvjson.json
           cp csvjson.csv site/src/csvjson.csv
           cd site
