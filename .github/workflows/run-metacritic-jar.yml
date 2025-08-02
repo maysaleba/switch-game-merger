@@ -1,0 +1,48 @@
+name: Metacritic JAR Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-jar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout this repository
+        uses: actions/checkout@v3
+
+      - name: Download converted_report3.xlsx artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: converted_report
+          path: .
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Create gcp_key.json from secret
+        run: echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > gcp_key.json
+
+      - name: Clone maysaleba.github.io repo
+        run: |
+          git clone https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/maysaleba/maysaleba.github.io.git site
+
+      - name: Run metacritic_enrich_switch.jar
+        run: java -jar metacritic_enrich_switch.jar
+
+      - name: Move output files to GitHub Pages repo
+        run: |
+          mv csvjson.json site/src/csvjson.json
+          mv csvjson.csv site/src/csvjson.csv
+
+      - name: Commit and push updated JSON + CSV
+        run: |
+          cd site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/csvjson.json src/csvjson.csv
+          git commit -m "🤖 Auto-update csvjson.json and csvjson.csv from JAR output"
+          git push
