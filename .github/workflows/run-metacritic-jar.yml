@@ -32,6 +32,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install npm dependencies
+        run: npm install
+
       - name: Create GCP credentials file
         run: echo "${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}" | base64 -d > gcp_key.json
 
@@ -69,9 +77,7 @@ jobs:
           git pull --rebase origin main
           git push origin main
 
-      - name: Trigger GitHub Pages redeploy
-        run: |
-          curl -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
-            https://api.github.com/repos/maysaleba/maysaleba.github.io/pages/builds
+      - name: Deploy site using npm
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
+        run: npm run deploy
