@@ -41,7 +41,7 @@ jobs:
           echo "===== gcp_key.json end ====="
 
       - name: Run Metacritic enrichment JAR
-        run: java -jar metacritic_enrich_switch.jar
+        run: java -jar metacritic-enrich-switch-1.0.0.jar
 
       - name: Commit and push updated csvjson files
         run: |
