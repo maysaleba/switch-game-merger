@@ -2,8 +2,8 @@
 const { getGamesEurope, getPrices } = require('nintendo-switch-eshop');
 const fs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch'); // If using node-fetch for HTTP requests
-const axios = require('axios'); // For safePost requests
+const fetch = require('node-fetch'); 
+const axios = require('axios'); 
 
 // Delay utility
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -23,30 +23,27 @@ async function safePost(url, payload, headers, retries = 3) {
 
 async function normalizeTitleUS(title) {
   return title
-    .replace(/[–—]/g, '-') // normalize en dash/em dash to hyphen
+    .replace(/[–—]/g, '-') 
     .replace("ŌKAMI™ HD", "OKAMI HD")
     .replace("Ni No Kuni Remastered: Wrath of the White Witch", "Ni no Kuni: Wrath of the White Witch")
-    .replace(/\s*-\s*/g, '-')                      // space-dash-space normalization
-    .replace(/[^a-zA-Z0-9\s\-+&Ⅱ]/g, '')           // keep dash and space
-    .replace(/\s+/g, '-')                          // convert all spaces to dash
+    .replace(/\s*-\s*/g, '-')                     
+    .replace(/[^a-zA-Z0-9\s\-+&Ⅱ]/g, '')           
+    .replace(/\s+/g, '-')                         
     .toLowerCase();
 }
 
-
-
 async function normalizeTitleEU(title) {
   return title
-    .replace(/[–—]/g, '-') // normalize en dash/em dash to hyphen
+    .replace(/[–—]/g, '-') 
     .replace("Atelier Ryza: Ever Darkness and the Secret Hideout", "Atelier Ryza: Ever Darkness & the Secret Hideout")
     .replace("Attack on Titan", "A.O.T.")
     .replace("Spiritfarer", "Spiritfarer: Farewell Edition")
     .replace("Ni no Kuni™ II: Revenant Kingdom PRINCE'S EDITION", "Ni no Kuni™ II: Revenant Kingdom - The Prince's Edition")
-    .replace(/\s*-\s*/g, '-')                      // space-dash-space normalization
-    .replace(/[^a-zA-Z0-9\s\-+&Ⅱ]/g, '')           // keep dash and space
-    .replace(/\s+/g, '-')                          // convert all spaces to dash
+    .replace(/\s*-\s*/g, '-')                     
+    .replace(/[^a-zA-Z0-9\s\-+&Ⅱ]/g, '')           
+    .replace(/\s+/g, '-')                         
     .toLowerCase();
 }
-
 
 async function fetchUSGamesOnSale() {
   const indices = ['store_game_en_us_title_asc', 'store_game_en_us_title_des'];
@@ -68,7 +65,6 @@ async function fetchUSGamesOnSale() {
     do {
       const payload = {
         query,
-      //   filters: '(corePlatforms:"Nintendo Switch") AND (topLevelFilters:"Deals")'      
         filters: '(corePlatforms:"Nintendo Switch" OR corePlatforms:"Nintendo Switch 2") AND (topLevelFilters:"Deals")',
         hitsPerPage,
         page
@@ -104,11 +100,25 @@ async function fetchUSGamesOnSale() {
 async function mergeGames() {
   const [usGames, euGames] = await Promise.all([fetchUSGamesOnSale(), getGamesEurope()]);
 
+  // Store arrays per normalized title (avoid overwriting)
   const usMap = new Map();
-  for (const game of usGames) usMap.set(await normalizeTitleUS(game.title), game);
+  for (const game of usGames) {
+    const key = await normalizeTitleUS(game.title);
+    if (!usMap.has(key)) usMap.set(key, []);
+    const arr = usMap.get(key);
+    if (!arr.some(g => g.nsuid === game.nsuid)) arr.push(game); // prevent true duplicates
+  }
 
   const euMap = new Map();
-  for (const game of euGames) euMap.set(await normalizeTitleEU(game.title.trim()), game);
+  for (const game of euGames) {
+    const key = await normalizeTitleEU(game.title.trim());
+    if (!euMap.has(key)) euMap.set(key, []);
+    const arr = euMap.get(key);
+    const nsuidList = game.nsuid_txt || [];
+    if (!arr.some(g => (g.nsuid_txt || []).some(id => nsuidList.includes(id)))) {
+      arr.push(game); // prevent true duplicates
+    }
+  }
 
   const merged = [];
 
@@ -156,87 +166,92 @@ async function mergeGames() {
     };
 
     await fetchPrices(matched, 'nsuid_us', regionSets.US);
-    await fetchPrices(matched, 'nsuid_eu', regionSets.EU); // ensure EU prices for matched games
+    await fetchPrices(matched, 'nsuid_eu', regionSets.EU);
     await fetchPrices(onlyUS, 'nsuid_us', regionSets.US);
     await fetchPrices(onlyEU, 'nsuid_eu', regionSets.EU);
   };
 
-  // defer enrichment until after merge
-
-
   console.log(`🔄 Matching EU and US games...`);
-  for (const [title, euGame] of euMap.entries()) {
-    // ✅ Only proceed if there’s a 7001 (main game) NSUID
-    const baseEUId = (euGame.nsuid_txt || []).find(id => id.startsWith("7001"));
-    if (!baseEUId) continue;
+  for (const [title, euGamesArr] of euMap.entries()) {
+    const baseEUGames = euGamesArr.filter(euGame =>
+      (euGame.nsuid_txt || []).some(id => id.startsWith("7001"))
+    );
+    if (baseEUGames.length === 0) continue;
 
-    const usGame = usMap.get(title);
-    if (usGame) {
-      merged.push({
-        title: usGame.title || '',
-        nsuid_us: usGame.nsuid || '',
-        nsuid_eu: baseEUId,
-        url: usGame.url || '',
-        releaseDate: usGame.releaseDate || '',
-        esrbRating: usGame.dlcType || '',
-        numberOfPlayers: usGame.playerCount || '',
-        publisher: usGame.softwarePublisher || '',
-        image: usGame.productImageSquare
-          ? `https://images.weserv.nl/?url=${usGame.productImageSquare}&w=240`
-          : usGame.productImage
-          ? `https://images.weserv.nl/?url=https://assets.nintendo.com/image/upload/${usGame.productImage}&w=240`
-          : '',
-        slug: usGame.urlKey || '',
-        genre: Array.isArray(usGame.genres) ? usGame.genres.join(', ') : '',
-        platform: usGame.platform || 'Nintendo Switch'
-      });
+    const usGamesArr = usMap.get(title) || [];
+
+    if (usGamesArr.length > 0) {
+      for (const euGame of baseEUGames) {
+        for (const usGame of usGamesArr) {
+          merged.push({
+            title: usGame.title || '',
+            nsuid_us: usGame.nsuid || '',
+            nsuid_eu: (euGame.nsuid_txt || []).find(id => id.startsWith("7001")),
+            url: usGame.url || '',
+            releaseDate: usGame.releaseDate || '',
+            esrbRating: usGame.dlcType || '',
+            numberOfPlayers: usGame.playerCount || '',
+            publisher: usGame.softwarePublisher || '',
+            image: usGame.productImageSquare
+              ? `https://images.weserv.nl/?url=${usGame.productImageSquare}&w=240`
+              : usGame.productImage
+              ? `https://images.weserv.nl/?url=https://assets.nintendo.com/image/upload/${usGame.productImage}&w=240`
+              : '',
+            slug: usGame.urlKey || '',
+            genre: Array.isArray(usGame.genres) ? usGame.genres.join(', ') : '',
+            platform: usGame.platform || 'Nintendo Switch'
+          });
+        }
+      }
       usMap.delete(title);
     } else {
-      const platform = euGame.system_names_txt?.join(', ') || 'Nintendo Switch';
-      const slugSuffix = platform === 'Nintendo Switch 2' ? '-switch-2' : '-switch';
-
-      merged.push({
-        title: euGame.title.trim(),
-        nsuid_us: '',
-        nsuid_eu: baseEUId,
-        url: euGame.url,
-        releaseDate: euGame.dates_released_dts?.[0] || '',
-        esrbRating: euGame.type === 'DLC' ? 'Individual' : '',
-        numberOfPlayers: euGame.players_to,
-        publisher: euGame.publisher,
-        image: euGame.image_url_sq_s
-          ? `https://images.weserv.nl/?url=${euGame.image_url_sq_s}&w=240`
-          : '',
-        slug: euGame.title.trim().toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '') + slugSuffix,
-        genre: euGame.pretty_game_categories_txt?.join(', ') || '',
-        platform
-      });
+      for (const euGame of baseEUGames) {
+        const platform = euGame.system_names_txt?.join(', ') || 'Nintendo Switch';
+        const slugSuffix = platform === 'Nintendo Switch 2' ? '-switch-2' : '-switch';
+        merged.push({
+          title: euGame.title.trim(),
+          nsuid_us: '',
+          nsuid_eu: (euGame.nsuid_txt || []).find(id => id.startsWith("7001")),
+          url: euGame.url,
+          releaseDate: euGame.dates_released_dts?.[0] || '',
+          esrbRating: euGame.type === 'DLC' ? 'Individual' : '',
+          numberOfPlayers: euGame.players_to,
+          publisher: euGame.publisher,
+          image: euGame.image_url_sq_s
+            ? `https://images.weserv.nl/?url=${euGame.image_url_sq_s}&w=240`
+            : '',
+          slug: euGame.title.trim().toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') + slugSuffix,
+          genre: euGame.pretty_game_categories_txt?.join(', ') || '',
+          platform
+        });
+      }
     }
   }
 
-
   console.log(`📦 Adding unmatched US games...`);
-  for (const game of usMap.values()) {
-    merged.push({
-      title: game.title || '',
-      nsuid_us: game.nsuid || '',
-      nsuid_eu: '',
-      url: game.url || '',
-      releaseDate: game.releaseDate || '',
-      esrbRating: game.dlcType || '',
-      numberOfPlayers: game.playerCount || '',
-      publisher: game.softwarePublisher || '',
-      image: game.productImageSquare
-    ? `https://images.weserv.nl/?url=${game.productImageSquare}&w=240`
-    : game.productImage
-    ? `https://images.weserv.nl/?url=https://assets.nintendo.com/image/upload/${game.productImage}&w=240`
-    : '',
-      slug: game.urlKey || '',
-      genre: Array.isArray(game.genres) ? game.genres.join(', ') : '',
-      platform: game.platform || 'Nintendo Switch'
-    });
+  for (const gamesArr of usMap.values()) {
+    for (const game of gamesArr) {
+      merged.push({
+        title: game.title || '',
+        nsuid_us: game.nsuid || '',
+        nsuid_eu: '',
+        url: game.url || '',
+        releaseDate: game.releaseDate || '',
+        esrbRating: game.dlcType || '',
+        numberOfPlayers: game.playerCount || '',
+        publisher: game.softwarePublisher || '',
+        image: game.productImageSquare
+          ? `https://images.weserv.nl/?url=${game.productImageSquare}&w=240`
+          : game.productImage
+          ? `https://images.weserv.nl/?url=https://assets.nintendo.com/image/upload/${game.productImage}&w=240`
+          : '',
+        slug: game.urlKey || '',
+        genre: Array.isArray(game.genres) ? game.genres.join(', ') : '',
+        platform: game.platform || 'Nintendo Switch'
+      });
+    }
   }
 
   const outputPath = path.join(__dirname, 'matched_nintendo_games.json');
@@ -261,7 +276,6 @@ async function mergeGames() {
     console.log('✅ All slugs are unique.');
   }
 
-  // Export to CSV
   const csvPath = path.join(__dirname, 'matched_nintendo_games.csv');
   const headers = [
     'title', 'slug', 'nsuid_us', 'nsuid_eu', 'url', 'releaseDate', 'esrbRating',
