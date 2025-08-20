@@ -29,6 +29,7 @@ async function normalizeTitleUS(title) {
     .replace(/[–—]/g, '-') 
     .replace("ŌKAMI™ HD", "OKAMI HD")
     .replace("Ni No Kuni Remastered: Wrath of the White Witch", "Ni no Kuni: Wrath of the White Witch")
+    .replace("BLADECHIMERA","Blade Chimera")
     .replace(/\s*-\s*/g, '-')
     .replace(/[^a-zA-Z0-9\s\-+&Ⅱ]/g, '')
     .replace(/\s+/g, '-')
